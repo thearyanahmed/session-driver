@@ -12,6 +12,8 @@ class Json implements \SessionHandlerInterface {
 
     protected $_defaultFileContent = '{}';
 
+    private $extension = 'json';
+
     public function __construct(string $dir = null, string $sessionId = null)
     {
         if(!$dir) {
@@ -34,7 +36,7 @@ class Json implements \SessionHandlerInterface {
      */
     public function open($save_path, $name)
     {
-        $filePath = $save_path . '/' . $name . '.json';
+        $filePath = $save_path . '/' . $name . '.' . $this->extension;
 
         $this->_filePath = $filePath;
 
@@ -56,39 +58,31 @@ class Json implements \SessionHandlerInterface {
     public function close()
     {
         // TODO: Implement close() method.
-
+        return true;
     }
 
     /**
-     * Destroy a session
-     * @link https://php.net/manual/en/sessionhandlerinterface.destroy.php
-     * @param string $session_id The session ID being destroyed.
-     * @return bool <p>
-     * The return value (usually TRUE on success, FALSE on failure).
-     * Note this value is returned internally to PHP for processing.
-     * </p>
-     * @since 5.4.0
-     */
-    public function destroy($session_id)
-    {
-//        // TODO: Implement destroy() method.
-//        $file = $this->_load();
-//
-//        if(isset($file[$session_id])) {
-//            unset($file[$session_id]);
-//            return $this->_put($file);
-//        }
-//        return false;
-    }
-
-    /**
-     * @param int $maxlifetime
+     * @param string $file
      * @return bool
      */
-    public function gc($maxlifetime)
+    public function destroy($file)
     {
-        foreach (glob("$this->_dir/*.json") as $file) {
-            if (filemtime($file) + $maxlifetime < time() && file_exists($file)) {
+        $file = "$this->_dir/$file.$this->extension" ;
+        if (file_exists($file)) {
+            unlink($file);
+        }
+
+        return true;
+    }
+
+    /**
+     * @param int $lifespan
+     * @return bool
+     */
+    public function gc($lifespan)
+    {
+        foreach (glob("$this->_dir/*.$this->extension") as $file) {
+            if (filemtime($file) + $lifespan < time() && file_exists($file)) {
                 unlink($file);
             }
         }

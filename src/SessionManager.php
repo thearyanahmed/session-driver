@@ -32,13 +32,9 @@ class SessionManager {
         return $this->driver->read($key);
     }
 
-    public function destroy($key)
+    public function destroy($session)
     {
-        return $this->driver->destroy($key);
+        return $this->driver->destroy($session);
     }
-
-    public function clean(int $lifespan = 1)
-    {
-        return $this->driver->gc($lifespan);
-    }
+    
 }

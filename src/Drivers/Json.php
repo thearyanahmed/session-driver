@@ -8,23 +8,41 @@ class Json implements \SessionHandlerInterface {
 
     protected $_filePath;
 
+    protected $_dir;
+
     protected $_defaultFileContent = '{}';
 
-    public function __construct(string $filePath = null)
+    public function __construct(string $dir = null, string $sessionId = null)
     {
-        if(!$filePath) {
-            $filePath = __DIR__ . '/../../data/session.json';
+        if(!$dir) {
+            $dir = __DIR__ . '/../../data';
+
+            $this->_dir = $dir;
         }
+
+        if(!$sessionId) {
+            $sessionId = mt_rand(0,1500);
+        }
+        $this->open($dir,$sessionId);
+    }
+
+    /**
+     * @param string $save_path
+     * @param string $name
+     * @return bool
+     * @throws DirectoryNotWriteableException
+     */
+    public function open($save_path, $name)
+    {
+        $filePath = $save_path . '/' . $name . '.json';
 
         $this->_filePath = $filePath;
 
-        if(!file_exists($this->_filePath)) {
-            if( ! is_writable(dirname($this->_filePath))) {
-                throw new DirectoryNotWriteableException("Session directory ( '{$this->_filePath}' ) is not writable.");
-            }
-            file_put_contents($this->_filePath,$this->_defaultFileContent);
-        }
+        $this->_createIfNotExists();
+
+        return true;
     }
+
 
     /**
      * Close the session
@@ -38,6 +56,7 @@ class Json implements \SessionHandlerInterface {
     public function close()
     {
         // TODO: Implement close() method.
+
     }
 
     /**
@@ -52,78 +71,89 @@ class Json implements \SessionHandlerInterface {
      */
     public function destroy($session_id)
     {
-        // TODO: Implement destroy() method.
+//        // TODO: Implement destroy() method.
+//        $file = $this->_load();
+//
+//        if(isset($file[$session_id])) {
+//            unset($file[$session_id]);
+//            return $this->_put($file);
+//        }
+//        return false;
     }
 
     /**
-     * Cleanup old sessions
-     * @link https://php.net/manual/en/sessionhandlerinterface.gc.php
-     * @param int $maxlifetime <p>
-     * Sessions that have not updated for
-     * the last maxlifetime seconds will be removed.
-     * </p>
-     * @return bool <p>
-     * The return value (usually TRUE on success, FALSE on failure).
-     * Note this value is returned internally to PHP for processing.
-     * </p>
-     * @since 5.4.0
+     * @param int $maxlifetime
+     * @return bool
      */
     public function gc($maxlifetime)
     {
-        // TODO: Implement gc() method.
+        foreach (glob("$this->_dir/*.json") as $file) {
+            if (filemtime($file) + $maxlifetime < time() && file_exists($file)) {
+                unlink($file);
+            }
+        }
+        return true;
     }
 
     /**
-     * Initialize session
-     * @link https://php.net/manual/en/sessionhandlerinterface.open.php
-     * @param string $save_path The path where to store/retrieve the session.
-     * @param string $name The session name.
-     * @return bool <p>
-     * The return value (usually TRUE on success, FALSE on failure).
-     * Note this value is returned internally to PHP for processing.
-     * </p>
-     * @since 5.4.0
-     */
-    public function open($save_path, $name)
-    {
-        // TODO: Implement open() method.
-    }
-
-    /**
-     * Read session data
-     * @link https://php.net/manual/en/sessionhandlerinterface.read.php
-     * @param string $session_id The session id to read data for.
-     * @return string <p>
-     * Returns an encoded string of the read data.
-     * If nothing was read, it must return an empty string.
-     * Note this value is returned internally to PHP for processing.
-     * </p>
-     * @since 5.4.0
+     * @param string $session_id
+     * @return string|null
      */
     public function read($session_id)
     {
-        // TODO: Implement read() method.
+        //load session
+        $file = $this->_load();
+        //return value | null
+        return $file[$session_id] ?? null;
     }
 
     /**
-     * Write session data
-     * @link https://php.net/manual/en/sessionhandlerinterface.write.php
-     * @param string $session_id The session id.
-     * @param string $session_data <p>
-     * The encoded session data. This data is the
-     * result of the PHP internally encoding
-     * the $_SESSION superglobal to a serialized
-     * string and passing it as this parameter.
-     * Please note sessions use an alternative serialization method.
-     * </p>
-     * @return bool <p>
-     * The return value (usually TRUE on success, FALSE on failure).
-     * Note this value is returned internally to PHP for processing.
-     * </p>
-     * @since 5.4.0
+     * @param string $session_id
+     * @param string $session_data
+     * @return bool
      */
     public function write($session_id, $session_data)
     {
-        // TODO: Implement write() method.
+        //load session
+        $file = $this->_load();
+        //set value
+        $file[$session_id] = $session_data;
+        //save
+        return $this->_put($file);
+    }
+
+    /**
+     * @return mixed
+     */
+    private function _load()
+    {
+        $file = file_get_contents($this->_filePath);
+        //decode
+       return json_decode($file,true);
+    }
+    /**
+     * @throws DirectoryNotWriteableException
+     */
+    private function _createIfNotExists()
+    {
+        if(!file_exists($this->_filePath)) {
+            if( ! is_writable(dirname($this->_filePath))) {
+                throw new DirectoryNotWriteableException("Session directory ( '{$this->_filePath}' ) is not writable.");
+            }
+            $this->_put($this->_defaultFileContent);
+        }
+    }
+
+    /**
+     * @param $content
+     * @param bool $encodeToJson
+     * @return bool
+     */
+    private function _put($content, $encodeToJson = true)
+    {
+        if($encodeToJson) {
+            $content = json_encode($content);
+        }
+        return file_put_contents($this->_filePath,$content) ? true : false;
     }
 }

@@ -17,15 +17,12 @@ class Json implements \SessionHandlerInterface {
         }
 
         $this->_filePath = $filePath;
-//
+
         if(!file_exists($this->_filePath)) {
-//            //maybe call from constructor and change these stuff
-//            if(!is_writable($this->_filePath)) {
-//                throw new DirectoryNotWriteableException("Session directory ( '{$this->_filePath}' ) is not writable.");
-//            }
+            if( ! is_writable(dirname($this->_filePath))) {
+                throw new DirectoryNotWriteableException("Session directory ( '{$this->_filePath}' ) is not writable.");
+            }
             file_put_contents($this->_filePath,$this->_defaultFileContent);
-//        } else {
-//
         }
     }
 

@@ -10,6 +10,17 @@ use Prophecy\DDriver\SQLAlchemist\Support\Helpers;
 class Mysql implements ElixirContract
 {
     private $connection;
+
+    private $defaultOperator = '=';
+
+    private $types = [
+        'where'   => 'WHERE',
+        'WHERE' => 'WHERE',
+        'or where' => 'OR WHERE',
+        'OR WHERE' => 'OR WHERE',
+        'and'     => 'AND',
+        'AND' => 'AND'
+    ];
     /**
      * @param string $host
      * @param int $port
@@ -59,27 +70,164 @@ class Mysql implements ElixirContract
 
     public function read(array $conditions)
     {
-        // TODO: Implement read() method.
+        $query = $this->queryBuilder($conditions);
+        $res = $this->execute($query);
+
+        if($res->num_rows === 0) {
+            return [];
+        }
+
+        return $res->fetch_assoc();
     }
 
-    public function update(array $conditions, array $mappedColumns)
+    //array structure is to be expected like
+    //$mappedArray = [
+        //'select' => '*',
+        //'table' => 'sessions',
+        //'where' => [
+        //['key','=','mew'],
+        //['value','hukka hua']
+        //],
+        //'limit' => [122,332]
+    //];
+    private function queryBuilder(array $conditions)
     {
-        // TODO: Implement update() method.
+        $condition = '';
+        if (false === Helpers::isAssoc($conditions)) {
+            $condition = 'WHERE 1';
+
+            return $condition;
+        }
+        //condition = ''
+        foreach($conditions as $type => $values) {
+
+            if($type === 'select' || $type === 'SELECT') {
+                $condition .= "SELECT {$values}"; // select ALL/ select *
+            }
+
+            if($type === 'table' || $type === 'TABLE') {
+                $condition .= " FROM {$values}";
+            }
+
+            if(is_array($values)) {
+                $condition .= $this->conditionBuilder([$type => $values]);
+            }
+        }
+        return $condition;
     }
 
-    public function delete(array $conditions)
+    private function conditionBuilder(array $conditions) {
+        $condition = '';
+        $limiter = [];
+
+        $types = [
+            'integer', 'double', 'bool', 'array', 'object'
+        ];
+        $whereCounter = 0;
+
+        foreach($conditions as $type => $values) {
+            if($type === 'where' || $type === 'WHERE') {
+                foreach($values as $value) {
+                    $whereCounter++;
+
+                    if(count($value) === 2) {
+                        $operator = $this->defaultOperator;
+                        $key = $value[0];
+                        $val = $value[1];
+                    } else {
+                        $operator = $value[1];
+                        $key      = $value[0];
+                        $val      = $value[2];
+                    }
+
+                    if(!in_array(gettype($val),$types)) {
+                        $val = '"'. $val . '"';
+                    }
+
+                    if($whereCounter === 1) {
+                        $condition .= " WHERE";
+                    } else {
+                        $condition .= " AND ";
+                    }
+                    $condition .= " {$key} {$operator} {$val}";
+                }
+            }
+
+            if($type === 'limit' || $type === 'LIMIT') {
+                $limiter = [$values[0],$values[1]];
+            }
+        }
+
+        if(count($limiter) === 2) {
+            $condition .= " LIMIT {$limiter[0]},{$limiter[1]};";
+        }
+        return $condition;
+    }
+
+    public function update(string $table,array $conditions)
     {
-        // TODO: Implement delete() method.
+        $query = "UPDATE {$table} SET ";
+
+        $types = [
+            'integer', 'double', 'bool', 'array', 'object'
+        ];
+        $counter = 1;
+        $len = count($conditions['update']);
+
+        foreach($conditions['update'] as $key => $value) {
+
+            if(!in_array($value,$types)) {
+                $value = '"'. $value . '"';
+            }
+
+            $query .= " {$key}={$value}";
+
+            if($counter < $len) {
+                $query .=',';
+            }
+
+            $counter++;
+        }
+        $where  = $this->conditionBuilder($conditions);
+
+        $query .= $where;
+
+        return $this->execute($query);
     }
 
+    /**
+     * @param string $table
+     * @param array $conditions
+     * @return mixed
+     */
+    public function delete(string $table, array $conditions)
+    {
+        $query = "DELETE FROM {$table}";
+        $query .= $this->conditionBuilder($conditions);
+        return $this->execute($query);
+    }
+
+    /**
+     * @param string $query
+     * @return mixed
+     */
     public function raw(string $query)
     {
         return $this->execute($query);
     }
 
+    /**
+     * @param $query
+     * @return mixed
+     */
     private function execute($query)
     {
-        return $this->connection->query($query) ? TRUE : $this->connection->error;
+        $res =  $this->connection->query($query);
+        if($this->connection->error) {
+            return $this->connection->error;
+        }
+
+        return $res;
     }
 
     private function decorateColumns($array)

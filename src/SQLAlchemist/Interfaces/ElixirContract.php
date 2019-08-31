@@ -10,9 +10,9 @@ interface ElixirContract
 
     public function read(array $conditions);
 
-    public function update(array $conditions,array $mappedColumns);
+    public function update(string $table,array $conditions);
 
-    public function delete(array $conditions);
+    public function delete(string $table,array $conditions);
 
     public function raw(string $query);
 }

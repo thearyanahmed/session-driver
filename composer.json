@@ -1,0 +1,17 @@
+{
+    "name": "prophecy/ddriver",
+    "description": "A session driver for PHP",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Aryan Ahmed Anik",
+            "email": "thearyanahmed@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Prophecy\\DDriver\\": "src/"
+        }
+    },
+    "require": {}
+}

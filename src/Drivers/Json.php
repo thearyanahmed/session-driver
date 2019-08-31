@@ -2,7 +2,32 @@
 
 namespace Prophecy\DDriver\Drivers;
 
+use Prophecy\DDriver\Exceptions\DirectoryNotWriteableException;
+
 class Json implements \SessionHandlerInterface {
+
+    protected $_filePath;
+
+    protected $_defaultFileContent = '{}';
+
+    public function __construct(string $filePath = null)
+    {
+        if(!$filePath) {
+            $filePath = __DIR__ . '/../../data/session.json';
+        }
+
+        $this->_filePath = $filePath;
+//
+        if(!file_exists($this->_filePath)) {
+//            //maybe call from constructor and change these stuff
+//            if(!is_writable($this->_filePath)) {
+//                throw new DirectoryNotWriteableException("Session directory ( '{$this->_filePath}' ) is not writable.");
+//            }
+            file_put_contents($this->_filePath,$this->_defaultFileContent);
+//        } else {
+//
+        }
+    }
 
     /**
      * Close the session

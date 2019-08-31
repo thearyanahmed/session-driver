@@ -6,8 +6,15 @@ use Prophecy\DDriver\Exceptions\InvalidDriverImplementation;
 use Prophecy\DDriver\SQLAlchemist\Interfaces\ElixirContract;
 
 class Alchemist {
+
     private $db;
 
+    private $columns = [
+        'key'   => 'session_key',
+        'value' => 'session_value',
+        'created' => 'created_at',
+        'updated' => 'updated_at'
+    ];
     /**
      * Alchemist constructor.
      * @param ElixirContract $db
@@ -22,8 +29,17 @@ class Alchemist {
         $this->db = $db;
     }
 
+
+
     public function textConnection()
     {
-        var_dump($this->db->raw('SELECT * FROM sessions'));
+        $mappedArray = [
+            $this->columns['key']     => 'mew',
+            $this->columns['value']   => 'hello',
+            $this->columns['created'] => date("Y/m/d"),
+            $this->columns['updated'] => date('Y/m/d'),
+        ];
+        return $this->db->create('sessions',$mappedArray);
+//        var_dump($this->db->raw('SELECT * FROM sessions'));
     }
 }

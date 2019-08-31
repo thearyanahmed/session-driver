@@ -6,7 +6,7 @@ interface ElixirContract
 {
     public function connect(string $host,int $port,string $username,string $password,string $db,string $socket = null);
 
-    public function create(array $mappedColumnValues);
+    public function create(string $table,array $mappedColumnValues);
 
     public function read(array $conditions);
 

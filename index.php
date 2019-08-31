@@ -36,8 +36,9 @@ if($driver === 'json') {
     }
     try {
         $connection = new Alchemist($dbDriver);
-        $connection->textConnection();
+        $res = $connection->textConnection();
 
+        var_dump($res);
     } catch (InvalidDriverImplementation $e) {
         var_dump($e->getMessage());
         die();

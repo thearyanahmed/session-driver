@@ -3,12 +3,13 @@
 namespace Prophecy\DDriver\SQLAlchemist\Elixirs;
 
 use Prophecy\DDriver\Exceptions\ConnectionException;
+use Prophecy\DDriver\Exceptions\InvalidColumnValueMapping;
 use Prophecy\DDriver\SQLAlchemist\Interfaces\ElixirContract;
+use Prophecy\DDriver\SQLAlchemist\Support\Helpers;
 
 class Mysql implements ElixirContract
 {
     private $connection;
-
     /**
      * @param string $host
      * @param int $port
@@ -29,9 +30,31 @@ class Mysql implements ElixirContract
         $this->connection = $connection;
     }
 
-    public function create(array $mappedColumnValues)
+    /**
+     * @param string $table
+     * @param array $mappedColumnValues
+     * @return mixed
+     * @throws InvalidColumnValueMapping
+     */
+    public function create(string $table, array $mappedColumnValues)
     {
-        // TODO: Implement create() method.
+        //check if its an associative array
+        if(false === Helpers::isAssoc($mappedColumnValues)) {
+            //if not?invalid key value mapping
+            throw new InvalidColumnValueMapping('Invalid column mapped.Must be key value pair as column_name => value');
+        }
+        //yes?
+        //build query
+        $columns = implode(', ',array_keys($mappedColumnValues));
+
+        $values = $this->decorateColumns(array_values($mappedColumnValues));
+
+        $values = implode(',',$values);
+
+        $query = "INSERT INTO {$table} ( {$columns} ) VALUES ( {$values} )";
+        print_r($query . " \n");
+        //execute
+        return $this->execute($query);
     }
 
     public function read(array $conditions)
@@ -51,6 +74,26 @@ class Mysql implements ElixirContract
 
     public function raw(string $query)
     {
-        return $this->connection->query($query);
+        return $this->execute($query);
+    }
+
+    private function execute($query)
+    {
+        return $this->connection->query($query) ? TRUE : $this->connection->error;
+    }
+
+    private function decorateColumns($array)
+    {
+        $values = array_map(function($item) {
+            $types = [
+                'integer', 'double', 'bool', 'array', 'object'
+            ];
+            if (!in_array(gettype($item), $types)) {
+                return '"'. $item . '"';
+            }
+            return $item;
+        },array_values($array));
+
+        return $values;
     }
 }

@@ -14,5 +14,7 @@ interface ElixirContract
 
     public function delete(string $table,array $conditions);
 
+    public function close();
+
     public function raw(string $query);
 }

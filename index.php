@@ -1,6 +1,6 @@
 <?php
 
-use Prophecy\DDriver\Drivers\{Json,Redis};
+use Prophecy\DDriver\Drivers\{Database, Json, Redis};
 use Prophecy\DDriver\Exceptions\DirectoryNotWriteableException;
 use Prophecy\DDriver\Exceptions\InvalidDriverImplementation;
 use Prophecy\DDriver\SessionManager;
@@ -19,7 +19,7 @@ if($driver === 'json') {
     $sessionDriver = new Json();
 } else if($driver === 'redis') {
     $sessionDriver = new Redis();
-} else if($driver === 'mysql') {
+} else if($driver === 'database') {
     $dbDriver = new Mysql();
 
     try {
@@ -30,28 +30,24 @@ if($driver === 'json') {
             'root',
             'db_elixir_test'
         );
-    } catch (\Prophecy\DDriver\Exceptions\ConnectionException $e) {
-        var_dump($e);
-        die();
-    }
-    try {
-        $connection = new Alchemist($dbDriver);
-        $res = $connection->textConnection();
+        $alchemist = new Alchemist($dbDriver);
+        $sessionDriver = new Database($alchemist);
 
-        var_dump($res);
-    } catch (InvalidDriverImplementation $e) {
-        var_dump($e->getMessage());
+    } catch (\Prophecy\DDriver\Exceptions\ConnectionException $e) {
+//        var_dump($e);
         die();
+    } catch (InvalidDriverImplementation $e) {
+
     } catch (\Exception $e) {
-        var_dump($e->getMessage());
+//        var_dump($e->getMessage());
         die();
     }
 }
 
 try {
-//    $session = new SessionManager($sessionDriver);
-
-
+    $session = new SessionManager($sessionDriver);
+    $session->set('hello','world');
+    echo $session->get('hello');
 //    session_set_save_handler($sessionDriver, true);
 //    session_start();
 

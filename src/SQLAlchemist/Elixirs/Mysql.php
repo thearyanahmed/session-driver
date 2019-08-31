@@ -4,6 +4,7 @@ namespace Prophecy\DDriver\SQLAlchemist\Elixirs;
 
 use Prophecy\DDriver\Exceptions\ConnectionException;
 use Prophecy\DDriver\Exceptions\InvalidColumnValueMapping;
+use Prophecy\DDriver\Exceptions\MySQLQueryException;
 use Prophecy\DDriver\SQLAlchemist\Interfaces\ElixirContract;
 use Prophecy\DDriver\SQLAlchemist\Support\Helpers;
 
@@ -41,11 +42,13 @@ class Mysql implements ElixirContract
         $this->connection = $connection;
     }
 
+
     /**
      * @param string $table
      * @param array $mappedColumnValues
      * @return mixed
      * @throws InvalidColumnValueMapping
+     * @throws MySQLQueryException
      */
     public function create(string $table, array $mappedColumnValues)
     {
@@ -76,7 +79,6 @@ class Mysql implements ElixirContract
         if($res->num_rows === 0) {
             return [];
         }
-
         return $res->fetch_assoc();
     }
 
@@ -216,15 +218,17 @@ class Mysql implements ElixirContract
         return $this->execute($query);
     }
 
+
     /**
      * @param $query
      * @return mixed
+     * @throws MySQLQueryException
      */
     private function execute($query)
     {
         $res =  $this->connection->query($query);
         if($this->connection->error) {
-            return $this->connection->error;
+            throw new MySQLQueryException($this->connection->error);
         }
 
         return $res;
@@ -244,4 +248,10 @@ class Mysql implements ElixirContract
 
         return $values;
     }
+
+    public function close()
+    {
+        $this->connection->close();
+    }
+
 }

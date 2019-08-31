@@ -9,9 +9,11 @@ class Alchemist {
 
     private $db;
 
+    private $defaultTable = 'sessions';
+
     private $columns = [
-        'key'   => 'session_key',
-        'value' => 'session_value',
+        'key'     => 'session_key',
+        'value'   => 'session_value',
         'created' => 'created_at',
         'updated' => 'updated_at'
     ];
@@ -29,8 +31,25 @@ class Alchemist {
         $this->db = $db;
     }
 
+    public function read(array $conditions)
+    {
+        return $this->db->read($conditions);
+    }
 
+    public function create(array $map)
+    {
+        return $this->db->create($this->defaultTable,$map);
+    }
 
+    public function update(array $map)
+    {
+        return $this->db->update($this->defaultTable,$map);
+    }
+
+    public function delete(array $map)
+    {
+        return $this->db->delete($this->defaultTable,$map);
+    }
     public function textConnection()
     {
 //        $mappedArray = [

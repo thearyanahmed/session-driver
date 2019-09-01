@@ -10,7 +10,7 @@ class Json implements \SessionHandlerInterface {
 
     protected $_dir;
 
-    protected $_defaultFileContent = '{}';
+    protected $_defaultFileContent;
 
     private $extension = 'json';
 
@@ -25,6 +25,7 @@ class Json implements \SessionHandlerInterface {
         if(!$sessionId) {
             $sessionId = mt_rand(0,1500);
         }
+        $this->_defaultFileContent = json_encode([]);
         $this->open($dir,$sessionId);
     }
 
@@ -57,7 +58,6 @@ class Json implements \SessionHandlerInterface {
      */
     public function close()
     {
-        // TODO: Implement close() method.
         return true;
     }
 
@@ -111,6 +111,7 @@ class Json implements \SessionHandlerInterface {
         //load session
         $file = $this->_load();
         //set value
+//        var_dump(gettype($file));
         $file[$session_id] = $session_data;
         //save
         return $this->_put($file);

@@ -66,7 +66,6 @@ class Mysql implements ElixirContract
         $values = implode(',',$values);
 
         $query = "INSERT INTO {$table} ( {$columns} ) VALUES ( {$values} )";
-        print_r($query . " \n");
         //execute
         return $this->execute($query);
     }

@@ -50,27 +50,11 @@ class Alchemist {
     {
         return $this->db->delete($this->defaultTable,$map);
     }
-    public function textConnection()
+    public function textConnection(string $query = null)
     {
-//        $mappedArray = [
-//            $this->columns['key']     => 'mew',
-//            $this->columns['value']   => 'hello',
-//            $this->columns['created'] => date("Y/m/d"),
-//            $this->columns['updated'] => date('Y/m/d'),
-//        ];
-        $mappedArray = [
-            'select' => '*',
-            'table' => 'sessions',
-            'where' => [
-                ['id','=',1],
-            ],
-            'update' => [
-                'id' => 1,
-                'session_key' => 'hehe'
-            ]
-        ];
-        $res= $this->db->update('sessions',$mappedArray);
-        var_dump(($res));
-//        var_dump($this->db->raw('SELECT * FROM sessions'));
+        if(!$query || $query == '') {
+            $query = "SELECT * FROM {$this->defaultTable}";
+        }
+        return $this->db->raw($query);
     }
 }

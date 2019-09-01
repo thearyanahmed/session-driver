@@ -20,6 +20,10 @@ class SessionManager {
         }
 
         $this->driver = $driver;
+//        session_set_save_handler($driver, true);
+//        session_save_path(getenv('SESSION_SAVE_PATH'));
+//
+//        session_start();
     }
 
     public function set($key,$value)

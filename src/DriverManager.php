@@ -45,6 +45,7 @@ class DriverManager
      * Initiates JSON driver
      * uses env
      * @return Json Driver
+     * @throws Exceptions\DirectoryNotWriteableException
      */
     protected function initJsonDriver()
     {

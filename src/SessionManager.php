@@ -5,7 +5,10 @@ namespace Prophecy\DDriver;
 use Prophecy\DDriver\Exceptions\InvalidDriverImplementation;
 
 class SessionManager {
-
+    /**
+     * Session driver
+     * @var \SessionHandlerInterface
+     */
     protected $driver;
 
     /**
@@ -20,25 +23,37 @@ class SessionManager {
         }
 
         $this->driver = $driver;
-//        session_set_save_handler($driver, true);
-//        session_save_path(getenv('SESSION_SAVE_PATH'));
-//
-//        session_start();
+        //session_set_save_handler($driver, true);
+        //session_save_path(getenv('SESSION_SAVE_PATH'));
+
+        //session_start();
     }
 
-    public function set($key,$value)
+    /**
+     * @param $key
+     * @param $value
+     * @return bool
+     */
+    public function set($key, $value)
     {
         return $this->driver->write($key,$value);
     }
 
+    /**
+     * @param $key
+     * @return string
+     */
     public function get($key)
     {
         return $this->driver->read($key);
     }
 
+    /**
+     * @param $session
+     * @return bool
+     */
     public function destroy($session)
     {
         return $this->driver->destroy($session);
     }
-    
 }

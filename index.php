@@ -18,7 +18,7 @@ $requestedDriver = getenv('SESSION_DRIVER');
 try {
     //get the driver
     $sessionDriver = (new DriverManager)->getDriver($requestedDriver);
-
+    //initiate the session driver
     $session = new SessionManager($sessionDriver);
 
     $session->set('test', mt_rand(1,22));

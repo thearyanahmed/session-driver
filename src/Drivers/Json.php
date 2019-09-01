@@ -135,7 +135,7 @@ class Json implements \SessionHandlerInterface {
             if( ! is_writable(dirname($this->_filePath))) {
                 throw new DirectoryNotWriteableException("Session directory ( '{$this->_filePath}' ) is not writable.");
             }
-            $this->_put($this->_defaultFileContent);
+            $this->_put($this->_defaultFileContent,false);
         }
     }
 

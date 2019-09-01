@@ -6,33 +6,46 @@ use Prophecy\DDriver\SQLAlchemist\Interfaces\ElixirContract;
 
 class Database implements \SessionHandlerInterface
 {
+    /**
+     * connection to database
+     * @var $connection
+     */
     private $connection;
 
+    /**
+     * Database constructor.
+     * @param $driver
+     */
     public function __construct($driver)
     {
         $this->connection = $driver;
     }
 
-    public function close()
-    {
-        $this->connection->close();
-    }
-
-    public function destroy($session_id)
-    {
-        // TODO: Implement destroy() method.
-    }
-
-    public function gc($maxlifetime)
+    /**
+     * @param string $save_path
+     * @param string $name
+     * @return bool
+     */
+    public function open($save_path, $name)
     {
         return true;
     }
 
-    public function open($save_path, $name)
+    /**
+     * @param string $session_id
+     * @param string $session_data
+     * @return bool
+     */
+    public function write($session_id, $session_data)
     {
-        // TODO: Implement open() method.
+        $map = ['session_key' => $session_id,'session_value' => $session_data];
+        return $this->connection->create($map);
     }
 
+    /**
+     * @param string $session_id
+     * @return string
+     */
     public function read($session_id)
     {
         $condition = [
@@ -45,9 +58,36 @@ class Database implements \SessionHandlerInterface
         return $this->connection->read($condition);
     }
 
-    public function write($session_id, $session_data)
+    /**
+     * @param string $session_id
+     * @return bool
+     */
+    public function destroy($session_id)
     {
-        $map = ['session_key' => $session_id,'session_value' => $session_data];
-        return $this->connection->create($map);
+        $cond = [
+            'where' => [
+                ['session_key','=',$session_id]
+            ]
+        ];
+
+        return $this->connection->delete($cond);
+    }
+
+    /**
+     * @param int $maxlifetime
+     * @return bool
+     */
+    public function gc($maxlifetime)
+    {
+        //replicate delete all from where created_at < $maxlifetime
+        return true;
+    }
+
+    /**
+     * @return bool|void
+     */
+    public function close()
+    {
+        $this->connection->close();
     }
 }

@@ -2,26 +2,50 @@
 
 namespace Prophecy\DDriver\SQLAlchemist\Elixirs;
 
-use Prophecy\DDriver\Exceptions\ConnectionException;
-use Prophecy\DDriver\Exceptions\InvalidColumnValueMapping;
-use Prophecy\DDriver\Exceptions\MySQLQueryException;
-use Prophecy\DDriver\SQLAlchemist\Interfaces\ElixirContract;
-use Prophecy\DDriver\SQLAlchemist\Support\Helpers;
+use Prophecy\DDriver\Exceptions\{
+    ConnectionException,
+    InvalidColumnValueMapping,
+    MySQLQueryException
+};
+
+use Prophecy\DDriver\SQLAlchemist\{
+    Interfaces\ElixirContract,
+    Support\Helpers
+};
 
 class Mysql implements ElixirContract
 {
+    /**
+     * DEMO QUERY BUILDER
+     */
+    private  static $mappedArray = [
+        'select' => '*',
+        'table'  => 'sessions',
+        'where' => [
+            ['key','=','mew'],
+            ['value','some other value']
+        ],
+        'limit' => [122,332]
+    ];
+    /**
+     * DB Connection
+     * @var $connection
+     */
     private $connection;
-
+    /**
+     * Default comparison operator
+     * @var string
+     */
     private $defaultOperator = '=';
 
-    private $types = [
-        'where'   => 'WHERE',
-        'WHERE' => 'WHERE',
-        'or where' => 'OR WHERE',
-        'OR WHERE' => 'OR WHERE',
-        'and'     => 'AND',
-        'AND' => 'AND'
-    ];
+//    private $types = [
+//        'where'   => 'WHERE',
+//        'WHERE' => 'WHERE',
+//        'or where' => 'OR WHERE',
+//        'OR WHERE' => 'OR WHERE',
+//        'and'     => 'AND',
+//        'AND' => 'AND'
+//    ];
     /**
      * @param string $host
      * @param int $port
@@ -42,55 +66,11 @@ class Mysql implements ElixirContract
         $this->connection = $connection;
     }
 
-
     /**
-     * @param string $table
-     * @param array $mappedColumnValues
-     * @return mixed
-     * @throws InvalidColumnValueMapping
-     * @throws MySQLQueryException
+     * Builds query
+     * @param array $conditions
+     * @return string
      */
-    public function create(string $table, array $mappedColumnValues)
-    {
-        //check if its an associative array
-        if(false === Helpers::isAssoc($mappedColumnValues)) {
-            //if not?invalid key value mapping
-            throw new InvalidColumnValueMapping('Invalid column mapped.Must be key value pair as column_name => value');
-        }
-        //yes?
-        //build query
-        $columns = implode(', ',array_keys($mappedColumnValues));
-
-        $values = $this->decorateColumns(array_values($mappedColumnValues));
-
-        $values = implode(',',$values);
-
-        $query = "INSERT INTO {$table} ( {$columns} ) VALUES ( {$values} )";
-        //execute
-        return $this->execute($query);
-    }
-
-    public function read(array $conditions)
-    {
-        $query = $this->queryBuilder($conditions);
-        $res = $this->execute($query);
-
-        if($res->num_rows === 0) {
-            return [];
-        }
-        return $res->fetch_assoc();
-    }
-
-    //array structure is to be expected like
-    //$mappedArray = [
-        //'select' => '*',
-        //'table' => 'sessions',
-        //'where' => [
-        //['key','=','mew'],
-        //['value','hukka hua']
-        //],
-        //'limit' => [122,332]
-    //];
     private function queryBuilder(array $conditions)
     {
         $condition = '';
@@ -117,6 +97,11 @@ class Mysql implements ElixirContract
         return $condition;
     }
 
+    /**
+     * Generates query string based on condition
+     * @param array $conditions
+     * @return string
+     */
     private function conditionBuilder(array $conditions) {
         $condition = '';
         $limiter = [];
@@ -165,7 +150,91 @@ class Mysql implements ElixirContract
         return $condition;
     }
 
-    public function update(string $table,array $conditions)
+    /**
+     * Decorates column values with double quotes if they are not numeric or boolean
+     * @param $array
+     * @return array
+     */
+    private function decorateColumns($array)
+    {
+        $values = array_map(function($item) {
+            $types = [
+                'integer', 'double', 'bool', 'array', 'object'
+            ];
+            if (!in_array(gettype($item), $types)) {
+                return '"'. $item . '"';
+            }
+            return $item;
+        },array_values($array));
+
+        return $values;
+    }
+
+    /**
+     * Executes the query string
+     * @param $query string
+     * @return mixed
+     * @throws MySQLQueryException
+     */
+    private function execute($query)
+    {
+        $res =  $this->connection->query($query);
+        if($this->connection->error) {
+            throw new MySQLQueryException($this->connection->error);
+        }
+
+        return $res;
+    }
+
+    /**
+     * @param string $table
+     * @param array $mappedColumnValues
+     * @return mixed
+     * @throws InvalidColumnValueMapping
+     * @throws MySQLQueryException
+     */
+    public function create(string $table, array $mappedColumnValues)
+    {
+        //check if its an associative array
+        if(false === Helpers::isAssoc($mappedColumnValues)) {
+            //if not?invalid key value mapping
+            throw new InvalidColumnValueMapping('Invalid column mapped.Must be key value pair as column_name => value');
+        }
+        //build query
+        $columns = implode(', ',array_keys($mappedColumnValues));
+
+        $values = $this->decorateColumns(array_values($mappedColumnValues));
+
+        $values = implode(',',$values);
+
+        $query = "INSERT INTO {$table} ( {$columns} ) VALUES ( {$values} )";
+        //execute
+        return $this->execute($query);
+    }
+
+    /**
+     * @param array $conditions
+     * @return array
+     * @throws MySQLQueryException
+     */
+    public function read(array $conditions)
+    {
+        $query = $this->queryBuilder($conditions);
+        $res = $this->execute($query);
+
+        if($res->num_rows === 0) {
+            return [];
+        }
+        return $res->fetch_assoc();
+    }
+
+    /**
+     * @param string $table
+     * @param array $conditions
+     * @return mixed
+     * @throws MySQLQueryException
+     */
+    public function update(string $table, array $conditions)
     {
         $query = "UPDATE {$table} SET ";
 
@@ -200,6 +269,7 @@ class Mysql implements ElixirContract
      * @param string $table
      * @param array $conditions
      * @return mixed
+     * @throws MySQLQueryException
      */
     public function delete(string $table, array $conditions)
     {
@@ -209,45 +279,18 @@ class Mysql implements ElixirContract
     }
 
     /**
+     * Executes raw query
      * @param string $query
      * @return mixed
+     * @throws MySQLQueryException
      */
     public function raw(string $query)
     {
         return $this->execute($query);
     }
-
-
     /**
-     * @param $query
-     * @return mixed
-     * @throws MySQLQueryException
+     * Closes the connection
      */
-    private function execute($query)
-    {
-        $res =  $this->connection->query($query);
-        if($this->connection->error) {
-            throw new MySQLQueryException($this->connection->error);
-        }
-
-        return $res;
-    }
-
-    private function decorateColumns($array)
-    {
-        $values = array_map(function($item) {
-            $types = [
-                'integer', 'double', 'bool', 'array', 'object'
-            ];
-            if (!in_array(gettype($item), $types)) {
-                return '"'. $item . '"';
-            }
-            return $item;
-        },array_values($array));
-
-        return $values;
-    }
-
     public function close()
     {
         $this->connection->close();

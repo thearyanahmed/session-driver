@@ -5,15 +5,32 @@ namespace Prophecy\DDriver\Drivers;
 use Prophecy\DDriver\Exceptions\DirectoryNotWriteableException;
 
 class Json implements \SessionHandlerInterface {
-
+    /**
+     * Absolute path of the json file
+     * @var $_filePath
+     */
     protected $_filePath;
-
+    /**
+     * Json file's directory
+     * @var $_dir
+     */
     protected $_dir;
-
+    /**
+     * Default Content of whats going to be set when the json session driver is initiated
+     * @var $_defaultFileContent
+     */
     protected $_defaultFileContent;
-
+    /**
+     * @var $extension
+     */
     private $extension = 'json';
 
+    /**
+     * Json constructor.
+     * @param string|null $dir
+     * @param string|null $sessionId
+     * @throws DirectoryNotWriteableException
+     */
     public function __construct(string $dir = null, string $sessionId = null)
     {
         if(!$dir) {
@@ -28,8 +45,43 @@ class Json implements \SessionHandlerInterface {
         $this->_defaultFileContent = json_encode([]);
         $this->open($dir,$sessionId);
     }
-
     /**
+     * Loads json file
+     * @return mixed
+     */
+    private function _load()
+    {
+        $file = file_get_contents($this->_filePath);
+        //decode
+        return json_decode($file,true);
+    }
+    /**
+     * Saves content to json file
+     * @param $content
+     * @param bool $encodeToJson
+     * @return bool
+     */
+    private function _put($content, $encodeToJson = true)
+    {
+        if($encodeToJson) {
+            $content = json_encode($content);
+        }
+        return file_put_contents($this->_filePath,$content) ? true : false;
+    }
+    /**
+     * @throws DirectoryNotWriteableException
+     */
+    private function _createIfNotExists()
+    {
+        if(!file_exists($this->_filePath)) {
+            if( ! is_writable(dirname($this->_filePath))) {
+                throw new DirectoryNotWriteableException("Session directory ( '{$this->_filePath}' ) is not writable.");
+            }
+            $this->_put($this->_defaultFileContent,false);
+        }
+    }
+    /**
+     * Generates file if doesn't exists
      * @param string $save_path
      * @param string $name
      * @return bool
@@ -45,23 +97,33 @@ class Json implements \SessionHandlerInterface {
 
         return true;
     }
-
-
     /**
-     * Close the session
-     * @link https://php.net/manual/en/sessionhandlerinterface.close.php
-     * @return bool <p>
-     * The return value (usually TRUE on success, FALSE on failure).
-     * Note this value is returned internally to PHP for processing.
-     * </p>
-     * @since 5.4.0
+     * @param string $session_id
+     * @param string $session_data
+     * @return bool
      */
-    public function close()
+    public function write($session_id, $session_data)
     {
-        return true;
+        //load session
+        $file = $this->_load();
+        //set value
+        $file[$session_id] = $session_data;
+        //save
+        return $this->_put($file);
     }
-
     /**
+     * @param string $session_id
+     * @return string|null
+     */
+    public function read($session_id)
+    {
+        //load session
+        $file = $this->_load();
+        //return value | null
+        return $file[$session_id] ?? null;
+    }
+    /**
+     * Unlink the file
      * @param string $file
      * @return bool
      */
@@ -74,7 +136,6 @@ class Json implements \SessionHandlerInterface {
 
         return true;
     }
-
     /**
      * @param int $lifespan
      * @return bool
@@ -88,67 +149,22 @@ class Json implements \SessionHandlerInterface {
         }
         return true;
     }
-
     /**
-     * @param string $session_id
-     * @return string|null
-     */
-    public function read($session_id)
-    {
-        //load session
-        $file = $this->_load();
-        //return value | null
-        return $file[$session_id] ?? null;
-    }
-
-    /**
-     * @param string $session_id
-     * @param string $session_data
      * @return bool
      */
-    public function write($session_id, $session_data)
+    public function close()
     {
-        //load session
-        $file = $this->_load();
-        //set value
-//        var_dump(gettype($file));
-        $file[$session_id] = $session_data;
-        //save
-        return $this->_put($file);
+        return true;
     }
 
-    /**
-     * @return mixed
-     */
-    private function _load()
-    {
-        $file = file_get_contents($this->_filePath);
-        //decode
-       return json_decode($file,true);
-    }
-    /**
-     * @throws DirectoryNotWriteableException
-     */
-    private function _createIfNotExists()
-    {
-        if(!file_exists($this->_filePath)) {
-            if( ! is_writable(dirname($this->_filePath))) {
-                throw new DirectoryNotWriteableException("Session directory ( '{$this->_filePath}' ) is not writable.");
-            }
-            $this->_put($this->_defaultFileContent,false);
-        }
-    }
 
-    /**
-     * @param $content
-     * @param bool $encodeToJson
-     * @return bool
-     */
-    private function _put($content, $encodeToJson = true)
-    {
-        if($encodeToJson) {
-            $content = json_encode($content);
-        }
-        return file_put_contents($this->_filePath,$content) ? true : false;
-    }
+
+
+
+
+
+
+
+
+
 }

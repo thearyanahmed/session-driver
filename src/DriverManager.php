@@ -19,7 +19,7 @@ use Prophecy\DDriver\SQLAlchemist\{
 class DriverManager
 {
     /**
-     * @var array
+     * supported drivers and their initiate methods
      */
     protected $drivers = [
         'json'     => 'initJsonDriver',
@@ -27,7 +27,6 @@ class DriverManager
         'redis'    => 'initRedisDriver'
     ];
 
-    private $env;
     /**
      * @param string $requestedDriver
      * @return mixed
@@ -43,7 +42,9 @@ class DriverManager
     }
 
     /**
-     * @return Json
+     * Initiates JSON driver
+     * uses env
+     * @return Json Driver
      */
     protected function initJsonDriver()
     {
@@ -52,7 +53,9 @@ class DriverManager
     }
 
     /**
-     * @return Database
+     * Initiates Database driver
+     * uses env
+     * @return Database Driver
      * @throws ConnectionException
      * @throws Exceptions\InvalidDriverImplementation
      */
@@ -72,6 +75,7 @@ class DriverManager
 
             $alchemist = new Alchemist($dbDriver);
             return new Database($alchemist);
+
         } catch (Exceptions\ConnectionException $e) {
             throw $e;
         } catch (Exceptions\InvalidDriverImplementation $e) {
@@ -80,7 +84,9 @@ class DriverManager
     }
 
     /**
-     * @return Redis
+     * Initiates Database driver
+     * uses env
+     * @return Redis Driver
      */
     protected function initRedisDriver()
     {
